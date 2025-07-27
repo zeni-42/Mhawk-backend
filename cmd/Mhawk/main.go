@@ -7,15 +7,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/zeni-42/Mhawk/internal/database"
 	"github.com/zeni-42/Mhawk/internal/routes"
 )
-
 
 func main() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatalln(".env file not loaded")
 	}
+
+	database.Connect()
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
