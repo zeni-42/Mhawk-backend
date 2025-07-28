@@ -11,7 +11,7 @@ import (
 
 var DB *sql.DB
 
-func Connect() {
+func ConnectPG() {
 	dbUrl := os.Getenv("POSTGRES_URL")
 	if dbUrl == "" {
 		log.Fatalf("POSTGRES_URL not found")
@@ -28,7 +28,7 @@ func Connect() {
 		log.Fatalf("DB ping failed %v", err)
 	}
 
-	fmt.Println("[GIN] DB CONNECTED")
+	log.Println("DB CONNECTED")
 }
 
 func GetPing() bool {
@@ -39,4 +39,12 @@ func GetPing() bool {
 		return true
 	}
 	return false
+}
+
+func DisconnectPG() error {
+	if DB != nil {
+		DB.Close()
+		return nil
+	}
+	return fmt.Errorf("DB client is empty")
 }

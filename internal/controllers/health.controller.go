@@ -16,7 +16,8 @@ func HealthCheck(c *gin.Context) {
 		"version": "0.1.0",
 		"timestamps": time.Now(),
 		"dependencies": map[string]interface{}{
-			"Postgres": pingPG, 
+			"Postgres": pingPG,
+			"Redis": "true",
 		}, 
 	}
 
