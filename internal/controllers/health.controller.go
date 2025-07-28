@@ -9,6 +9,7 @@ import (
 
 func HealthCheck(c *gin.Context) {
 	pingPG := database.GetPing()
+	pingRedis := database.GetRedisPing()
 
 	m := map[string]interface{}{
 		"status": "OK",
@@ -17,7 +18,7 @@ func HealthCheck(c *gin.Context) {
 		"timestamps": time.Now(),
 		"dependencies": map[string]interface{}{
 			"Postgres": pingPG,
-			"Redis": "true",
+			"Redis": pingRedis,
 		}, 
 	}
 

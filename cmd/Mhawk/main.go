@@ -29,6 +29,9 @@ func main() {
 		log.Println("DB DISCONNECTED")
 	}()
 
+	database.ConnectRedis()
+	defer database.DisconnectRedis()
+
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	routes.Router(r)
