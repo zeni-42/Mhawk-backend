@@ -11,6 +11,7 @@ import (
 func GetAccessToken(u models.User) string {
 	claims := jwt.MapClaims{
 		"sub": u.Id.String(),
+		"iss": "Mhawk",
 		"exp": time.Now().Add(time.Hour * 24).Unix(),
 		"iat": time.Now().Unix(),
 	}
@@ -36,6 +37,7 @@ func GetRefreshToken(u models.User) string {
 	
 	claims := jwt.MapClaims{
 		"sub": refreshData,
+		"iss": "Mhawk",
 		"exp": time.Now().Add(time.Hour * 24 * 30).Unix(),
 		"iat": time.Now(),
 	}
@@ -45,7 +47,6 @@ func GetRefreshToken(u models.User) string {
 	refreshSecret := os.Getenv("REFRESH_SECRET")
 
 	signedToken, err := token.SignedString([]byte(refreshSecret))
-
 
 	if err != nil {
 		return ""

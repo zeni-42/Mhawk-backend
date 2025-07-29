@@ -83,3 +83,21 @@ func FindUserById(id uuid.UUID) (*models.User, error) {
 
 	return &user, nil
 }
+
+func UpdateRefreshToken(id uuid.UUID, token string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	psql := `
+		UPDATE users 
+		SET refresh_token = $2 
+		WHERE id = $1;
+	`
+
+	_ , err := database.DB.Exec(ctx, psql, id.String(), token)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

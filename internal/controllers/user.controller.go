@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/zeni-42/Mhawk/internal/models"
 	"github.com/zeni-42/Mhawk/internal/repository"
@@ -79,8 +80,42 @@ func LoginUser(context *gin.Context) {
 	AToken := token.GetAccessToken(uData)
 	Rtoken := token.GetRefreshToken(uData)
 
+	if err := repository.UpdateRefreshToken(registeredUser.Id, Rtoken); err != nil {
+		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Database error"))
+		return
+	}
+
 	context.SetCookie("accessToken", AToken, 60 * 60 * 24 * 10, "/", "", true, true)
 	context.SetCookie("refreshToken", Rtoken, 60 * 60 * 24 * 30, "/", "", true, true)
 
 	context.IndentedJSON(http.StatusOK, response.Success(nil, http.StatusOK, "User logged in"))
+}
+
+type LogoutRequest struct {
+	UserId string `json:"userId"`
+}
+
+func LogoutUser(context *gin.Context) {
+	var user LogoutRequest 
+
+	if err := context.BindJSON(&user); err != nil {
+		log.Printf("BindJSON error: %v", err)
+		context.IndentedJSON(http.StatusBadRequest, response.Error(err, http.StatusBadRequest, "Invalid data"))
+		return
+	}
+	id, err := uuid.Parse(user.UserId)
+	if err != nil {
+		context.IndentedJSON(http.StatusBadRequest, response.Error(err, http.StatusBadRequest, "Invalid UUID format"))
+		return
+	}
+
+	if err := repository.UpdateRefreshToken(id, ""); err != nil {
+		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Database error"))
+		return
+	}
+
+	context.SetCookie("accessToken", "", -1, "/", "", true, true)
+	context.SetCookie("refreshToken", "", -1, "/", "", true, true)
+
+	context.IndentedJSON(http.StatusOK, response.Success(nil, http.StatusOK, "User logged out"))
 }
