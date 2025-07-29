@@ -16,7 +16,7 @@ func FindUserByEmail(email string) (*models.User, error) {
 	var user models.User
 
 	psql := `
-		SELECT id, fullname, email 
+		SELECT id, fullname, email, password
 		FROM users 
 		WHERE email = $1;
 	`
@@ -25,6 +25,7 @@ func FindUserByEmail(email string) (*models.User, error) {
 		&user.Id,
 		&user.Fullname,
 		&user.Email,
+		&user.Password,
 	)
 	if err != nil {
 		return nil, err
