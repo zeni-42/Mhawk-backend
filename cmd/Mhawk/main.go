@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/zeni-42/Mhawk/internal/database"
+	"github.com/zeni-42/Mhawk/internal/repository"
 	"github.com/zeni-42/Mhawk/internal/routes"
 )
 
@@ -21,7 +22,11 @@ func main() {
 		log.Fatalln(".env file not loaded")
 	}
 
-	database.ConnectPG()
+	DB, err := database.ConnectPG()
+	if err != nil {
+		log.Fatalln("DB connection failed:", err)
+	}
+
 	defer func () {
 		if err := database.DisconnectPG(); err != nil {
 			log.Println("[GIN] Disconnection failed")
@@ -31,6 +36,8 @@ func main() {
 
 	database.ConnectRedis()
 	defer database.DisconnectRedis()
+
+	repository.InitTables(DB)
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()

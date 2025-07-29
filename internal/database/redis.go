@@ -43,7 +43,7 @@ func GetRedisPing() bool {
 	if RDB != nil {
 		_, err := RDB.Ping(context.Background()).Result()
 		if err != nil {
-			return false
+			return err == nil
 		}
 		return true
 	}

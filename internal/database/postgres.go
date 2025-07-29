@@ -1,39 +1,44 @@
 package database
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var DB *sql.DB
+var DB *pgxpool.Pool
 
-func ConnectPG() {
+func ConnectPG() (*pgxpool.Pool, error) {
 	dbUrl := os.Getenv("POSTGRES_URL")
 	if dbUrl == "" {
 		log.Fatalf("POSTGRES_URL not found")
 	}
 
 	var err error
-	DB, err = sql.Open("pgx", dbUrl)
+	DB, err = pgxpool.New(context.Background(), dbUrl)
 	if err != nil {
 		log.Fatalf("DB connection failed %v", err)
 	}
 
-	err = DB.Ping()
+	err = DB.Ping(context.Background())
 	if err != nil {
 		log.Fatalf("DB ping failed %v", err)
 	}
 
 	log.Println("DB CONNECTED")
+	return DB, nil
 }
 
 func GetPing() bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	if DB != nil {
-		if err := DB.Ping(); err != nil {
+		if err := DB.Ping(ctx); err != nil {
 			return false
 		}
 		return true
