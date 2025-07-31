@@ -58,6 +58,9 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.Use(CORSMiddleware())
+
+	// Allowing only 8MB of data for multipart form data 
+	r.MaxMultipartMemory = 8 << 20
 	routes.Router(r)
 
 	port := os.Getenv("PORT")

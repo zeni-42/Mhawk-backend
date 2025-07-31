@@ -4,6 +4,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -15,6 +17,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Uses to handle user registration and save in DB
 func RegisterUser(context *gin.Context) {
 	var user models.User
 
@@ -53,6 +56,7 @@ func RegisterUser(context *gin.Context) {
 	context.IndentedJSON(http.StatusCreated, response.Success(user, http.StatusCreated, "User Registered"))
 }
 
+// Used to handle user login and set cookies
 func LoginUser(context *gin.Context) {
 	var user models.User
 	if err := context.BindJSON(&user); err != nil {
@@ -95,6 +99,7 @@ type LogoutRequest struct {
 	UserId string `json:"userId"`
 }
 
+// Used to log out the user, removes refreshtoken in DB and clear cookies
 func LogoutUser(context *gin.Context) {
 	var user LogoutRequest 
 
@@ -118,4 +123,31 @@ func LogoutUser(context *gin.Context) {
 	context.SetCookie("refreshToken", "", -1, "/", "", true, true)
 
 	context.IndentedJSON(http.StatusOK, response.Success(nil, http.StatusOK, "User logged out"))
+}
+
+// Used to update the default image and if the user wants to update the image later on this function will be used.
+func UpdateAvatar(contex *gin.Context) {
+	file, err := contex.FormFile("avatar")
+	if err != nil {
+		contex.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Failed to save avatar"))
+		return
+	}
+	path, _ := os.Getwd()
+	publicPath := filepath.Join(path, "public")
+
+	if err := os.MkdirAll(publicPath, os.ModePerm); err != nil {
+		log.Println("Failed to create public directory:", err)
+		contex.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Server error"))
+		return
+	}
+
+	filename := filepath.Base(file.Filename)
+	savePath := filepath.Join(publicPath, filename)
+
+	if err := contex.SaveUploadedFile(file, savePath); err != nil {
+		contex.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Failed to save file"))
+		return
+	}
+
+	
 }

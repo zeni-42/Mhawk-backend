@@ -13,6 +13,8 @@ type User struct {
 	Password        string    	`json:"password"`
 	RefreshToken    string    	`json:"refreshtoken"`
 	FreeToken       int32     	`json:"freetoken"`
+	IsNew			bool		`json:"isnew"`
+	Avatar			string		`json:"avatar"`
 	IsPro           bool      	`json:"ispro"`
 	IsOrganization  bool      	`json:"isorganization"`
 	ApiId           uuid.UUID 	`json:"apiid"`

@@ -38,6 +38,8 @@ func InitTables(client *pgxpool.Pool) {
 			password TEXT NOT NULL,
 			refresh_token TEXT,
 			free_token INTEGER DEFAULT 50,
+			is_new BOOLEAN DEFAULT TRUE,
+			avatar TEXT DEFAULT 'https://res.cloudinary.com/dfbtssuwy/image/upload/v1735838884/ljziqvhelksqmytkffj9.jpg',
 			is_pro BOOLEAN DEFAULT FALSE,
 			is_organization BOOLEAN DEFAULT FALSE,
 			api_id UUID,
