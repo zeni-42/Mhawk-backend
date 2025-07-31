@@ -84,7 +84,7 @@ func FindUserById(id uuid.UUID) (*models.User, error) {
 	return &user, nil
 }
 
-func UpdateRefreshToken(id uuid.UUID, token string) error {
+func UpdateRefreshToken(id uuid.UUID, token interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
@@ -95,6 +95,24 @@ func UpdateRefreshToken(id uuid.UUID, token string) error {
 	`
 
 	_ , err := database.DB.Exec(ctx, psql, id.String(), token)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UpdateUserAvatar(id uuid.UUID, url string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	psql := `
+		UPDATE users
+		SET avatar = $1
+		WHERE id = $2
+	`
+
+	_, err := database.DB.Exec(ctx, psql, url, id.String())
 	if err != nil {
 		return err
 	}

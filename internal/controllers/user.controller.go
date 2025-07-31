@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/zeni-42/Mhawk/internal/models"
 	"github.com/zeni-42/Mhawk/internal/repository"
+	"github.com/zeni-42/Mhawk/internal/utils/cloudinary"
 	"github.com/zeni-42/Mhawk/internal/utils/response"
 	"github.com/zeni-42/Mhawk/internal/utils/token"
 	"golang.org/x/crypto/bcrypt"
@@ -95,13 +96,13 @@ func LoginUser(context *gin.Context) {
 	context.IndentedJSON(http.StatusOK, response.Success(nil, http.StatusOK, "User logged in"))
 }
 
-type LogoutRequest struct {
+type User struct {
 	UserId string `json:"userId"`
 }
 
 // Used to log out the user, removes refreshtoken in DB and clear cookies
 func LogoutUser(context *gin.Context) {
-	var user LogoutRequest 
+	var user User 
 
 	if err := context.BindJSON(&user); err != nil {
 		log.Printf("BindJSON error: %v", err)
@@ -114,7 +115,7 @@ func LogoutUser(context *gin.Context) {
 		return
 	}
 
-	if err := repository.UpdateRefreshToken(id, ""); err != nil {
+	if err := repository.UpdateRefreshToken(id, nil); err != nil {
 		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Database error"))
 		return
 	}
@@ -126,10 +127,23 @@ func LogoutUser(context *gin.Context) {
 }
 
 // Used to update the default image and if the user wants to update the image later on this function will be used.
-func UpdateAvatar(contex *gin.Context) {
-	file, err := contex.FormFile("avatar")
+func UpdateAvatar(context *gin.Context) {
+	var user User
+	
+	if err := context.BindJSON(&user.UserId); err != nil {
+		context.IndentedJSON(http.StatusBadRequest, response.Error(err, http.StatusBadRequest, "Invalid data"))
+		return
+	}
+	
+	id, err := uuid.Parse(user.UserId)
 	if err != nil {
-		contex.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Failed to save avatar"))
+		context.IndentedJSON(http.StatusBadRequest, response.Error(err, http.StatusBadRequest, "Invalid UUID format"))
+		return
+	}
+	
+	file, _ := context.FormFile("avatar")
+	if err != nil {
+		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Failed to save avatar"))
 		return
 	}
 	path, _ := os.Getwd()
@@ -137,17 +151,28 @@ func UpdateAvatar(contex *gin.Context) {
 
 	if err := os.MkdirAll(publicPath, os.ModePerm); err != nil {
 		log.Println("Failed to create public directory:", err)
-		contex.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Server error"))
+		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Server error"))
 		return
 	}
 
 	filename := filepath.Base(file.Filename)
 	savePath := filepath.Join(publicPath, filename)
 
-	if err := contex.SaveUploadedFile(file, savePath); err != nil {
-		contex.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Failed to save file"))
+	if err := context.SaveUploadedFile(file, savePath); err != nil {
+		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Failed to save file"))
 		return
 	}
 
-	
+	avatarUrl, err := cloudinary.UploadOnCloudinary(file)
+	if err != nil {
+		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Failed to upload image"))
+		return
+	}
+
+	if err := repository.UpdateUserAvatar(id, avatarUrl); err != nil {
+		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Failed to save image"))
+		return
+	}
+
+	context.IndentedJSON(http.StatusOK, response.Success(nil, http.StatusOK, "Avatar added"))
 }
