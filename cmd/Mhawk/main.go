@@ -16,6 +16,22 @@ import (
 	"github.com/zeni-42/Mhawk/internal/routes"
 )
 
+func CORSMiddleware() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.Writer.Header().Set("Access-Control-Allow-Origin", os.Getenv("CORS_ORIGIN"))
+		ctx.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+        ctx.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        ctx.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+
+		if ctx.Request.Method == http.MethodOptions {
+			ctx.AbortWithStatus(204)
+			return 
+		}
+
+		ctx.Next()
+	}
+}
+
 func main() {
 	err := godotenv.Load()
 	if err != nil {
@@ -41,6 +57,7 @@ func main() {
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
+	r.Use(CORSMiddleware())
 	routes.Router(r)
 
 	port := os.Getenv("PORT")
