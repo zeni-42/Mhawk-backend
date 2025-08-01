@@ -63,7 +63,7 @@ func FindUserById(id uuid.UUID) (*models.User, error) {
 	var user models.User
 
 	psql := `
-		SELECT id, fullname, email, is_pro, is_organization, created_at, updated_at
+		SELECT id, fullname, email, avatar, free_token, is_new, is_pro, is_organization, created_at, updated_at
 		FROM users
 		WHERE id = $1;
 	`
@@ -72,6 +72,9 @@ func FindUserById(id uuid.UUID) (*models.User, error) {
 		&user.Id,
 		&user.Fullname,
 		&user.Email,
+		&user.Avatar,
+		&user.FreeToken,
+		&user.IsNew,
 		&user.IsPro,
 		&user.IsOrganization,
 		&user.CreatedAt,
@@ -108,11 +111,11 @@ func UpdateUserAvatar(id uuid.UUID, url string) error {
 
 	psql := `
 		UPDATE users
-		SET avatar = $1
-		WHERE id = $2
+		SET avatar = $1, is_new = $2
+		WHERE id = $3
 	`
 
-	_, err := database.DB.Exec(ctx, psql, url, id.String())
+	_, err := database.DB.Exec(ctx, psql, url, false, id.String())
 	if err != nil {
 		return err
 	}

@@ -93,7 +93,9 @@ func LoginUser(context *gin.Context) {
 	context.SetCookie("accessToken", AToken, 60 * 60 * 24 * 10, "/", "", true, true)
 	context.SetCookie("refreshToken", Rtoken, 60 * 60 * 24 * 30, "/", "", true, true)
 
-	context.IndentedJSON(http.StatusOK, response.Success(nil, http.StatusOK, "User logged in"))
+	updatedUser, _ := repository.FindUserById(registeredUser.Id)
+
+	context.IndentedJSON(http.StatusOK, response.Success(updatedUser, http.StatusOK, "User logged in"))
 }
 
 type User struct {
@@ -128,24 +130,22 @@ func LogoutUser(context *gin.Context) {
 
 // Used to update the default image and if the user wants to update the image later on this function will be used.
 func UpdateAvatar(context *gin.Context) {
-	var user User
-	
-	if err := context.BindJSON(&user.UserId); err != nil {
-		context.IndentedJSON(http.StatusBadRequest, response.Error(err, http.StatusBadRequest, "Invalid data"))
-		return
-	}
-	
-	id, err := uuid.Parse(user.UserId)
-	if err != nil {
-		context.IndentedJSON(http.StatusBadRequest, response.Error(err, http.StatusBadRequest, "Invalid UUID format"))
-		return
-	}
-	
-	file, _ := context.FormFile("avatar")
+	file, err := context.FormFile("avatar")
 	if err != nil {
 		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Failed to save avatar"))
 		return
 	}
+
+	userId := context.PostForm("userId")
+	if userId == "" {
+		context.IndentedJSON(http.StatusBadRequest, response.Error(nil, http.StatusBadRequest, "UserId is missing"))
+	}
+
+	id, err := uuid.Parse(userId)
+	if err != nil {
+		context.IndentedJSON(http.StatusBadRequest, response.Error(err, http.StatusBadRequest, "Invalid user id"))
+	}
+
 	path, _ := os.Getwd()
 	publicPath := filepath.Join(path, "public")
 
