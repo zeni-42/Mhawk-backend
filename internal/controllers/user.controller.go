@@ -139,11 +139,13 @@ func UpdateAvatar(context *gin.Context) {
 	userId := context.PostForm("userId")
 	if userId == "" {
 		context.IndentedJSON(http.StatusBadRequest, response.Error(nil, http.StatusBadRequest, "UserId is missing"))
+		return
 	}
 
 	id, err := uuid.Parse(userId)
 	if err != nil {
 		context.IndentedJSON(http.StatusBadRequest, response.Error(err, http.StatusBadRequest, "Invalid user id"))
+		return
 	}
 
 	path, _ := os.Getwd()
@@ -175,4 +177,25 @@ func UpdateAvatar(context *gin.Context) {
 	}
 
 	context.IndentedJSON(http.StatusOK, response.Success(nil, http.StatusOK, "Avatar added"))
+}
+
+func GetUser(context *gin.Context) {
+	idParams := context.Param("id")
+
+	id, err := uuid.Parse(idParams) 
+	if err != nil {
+		context.IndentedJSON(http.StatusBadRequest, response.Error(err, http.StatusBadRequest, "Invalid user id"))
+		return
+	}
+
+	existingUser, err := repository.FindUserById(id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			context.IndentedJSON(http.StatusNotFound, response.Error(err, http.StatusNotFound, "User not found"))
+		}
+		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Database error"))
+		return
+	}
+
+	context.IndentedJSON(http.StatusOK, response.Success(existingUser, http.StatusOK, "User data"))
 }
