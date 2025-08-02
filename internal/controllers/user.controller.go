@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/zeni-42/Mhawk/internal/database"
 	"github.com/zeni-42/Mhawk/internal/models"
 	"github.com/zeni-42/Mhawk/internal/repository"
 	"github.com/zeni-42/Mhawk/internal/utils/cloudinary"
@@ -182,6 +184,16 @@ func UpdateAvatar(context *gin.Context) {
 func GetUser(context *gin.Context) {
 	idParams := context.Param("id")
 
+	data, err := database.GetUserDataFromRedis(idParams)
+	if err != nil {
+		log.Printf("%v", err)
+	}
+
+	if data != nil {
+		context.IndentedJSON(http.StatusOK, response.Success(data, http.StatusOK, "User data C"))
+		return
+	}
+
 	id, err := uuid.Parse(idParams) 
 	if err != nil {
 		context.IndentedJSON(http.StatusBadRequest, response.Error(err, http.StatusBadRequest, "Invalid user id"))
@@ -197,5 +209,14 @@ func GetUser(context *gin.Context) {
 		return
 	}
 
-	context.IndentedJSON(http.StatusOK, response.Success(existingUser, http.StatusOK, "User data"))
+	user := *existingUser
+	convertedByte, err := json.Marshal(user)
+	if err != nil {
+		log.Println("Conversion failed!")
+	}
+	if err := database.SetUserDataInRedis(existingUser.Id.String(), string(convertedByte)); err != nil {
+		log.Println("Failed to update cache")
+	}
+
+	context.IndentedJSON(http.StatusOK, response.Success(user, http.StatusOK, "User data"))
 }

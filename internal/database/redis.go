@@ -2,6 +2,8 @@ package database
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -48,4 +50,42 @@ func GetRedisPing() bool {
 		return true
 	}
 	return false
+}
+
+func SetUserDataInRedis(k, v string) error {
+	if RDB == nil {
+		log.Println("Redis client is empty")
+		return fmt.Errorf("client is empty")
+	}
+
+	ctx := context.Background()
+	err := RDB.Set(ctx, k, v, 5*time.Minute).Err()
+	if err != nil {
+		log.Printf("Failed to set Data in Redis %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func GetUserDataFromRedis(k string) (map[string]interface{}, error) {
+	if RDB == nil {
+		log.Println("Redis client is empty")
+		return nil, fmt.Errorf("client is empty")
+	}
+
+	ctx := context.Background()
+	data, err := RDB.Get(ctx, k).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	var jsonData map[string]interface{}
+
+	if err := json.Unmarshal([]byte(data), &jsonData); err != nil {
+		log.Println("Unmarshaling failed")
+		return nil, err
+	}
+
+	return jsonData, nil
 }
