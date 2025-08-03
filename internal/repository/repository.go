@@ -30,27 +30,104 @@ func InitTables(client *pgxpool.Pool) {
 	}
 
 	if !exist {
-		query := 
+		userQuery := 
 		`CREATE TABLE users (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			fullname TEXT NOT NULL,
 			email TEXT UNIQUE NOT NULL,
 			password TEXT NOT NULL,
 			refresh_token TEXT,
-			free_token INTEGER DEFAULT 50,
 			is_new BOOLEAN DEFAULT TRUE,
 			avatar TEXT DEFAULT 'https://res.cloudinary.com/dfbtssuwy/image/upload/v1735838884/ljziqvhelksqmytkffj9.jpg',
 			is_pro BOOLEAN DEFAULT FALSE,
 			is_organization BOOLEAN DEFAULT FALSE,
-			api_id UUID,
+			api_id UUID UNIQUE REFERENCES apikeys(id) ON DELETE SET NULL,
 			organization_id UUID,
 			created_at TIMESTAMPTZ DEFAULT NOW(),
 			updated_at TIMESTAMPTZ DEFAULT NOW()
 		);`
-		
-		_ , err := client.Exec(ctx, query)
-		if err != nil {
-			log.Fatalf("Failed to create table: %v", err)
+
+		apiQuery := `
+			CREATE TABLE apikeys (
+				id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+				api_key TEXT UNIQUE NOT NULL,
+				free_token INTEGER DEFAULT 50,
+				used_token INTEGER DEFAULT 0,
+				expired_date TIMESTAMPTZ,
+				refresh_date TIMESTAMPTZ,
+				created_at TIMESTAMPTZ DEFAULT NOW(),
+				updated_at TIMESTAMPTZ DEFAULT NOW()
+			);`
+
+		emailQuery := `
+			CREATE TABLE emails (
+				id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+				user_id UUID,
+				organization_id UUID,
+				is_template BOOLEAN DEFAULT FALSE,
+				template_id UUID,
+				is_bulk BOOLEAN DEFAULT FALSE,
+				log_id UUID,
+				recievers TEXT[] DEFAULT NULL,
+				created_at TIMESTAMPTZ DEFAULT NOW(),
+				updated_at TIMESTAMPTZ DEFAULT NOW()
+			);`
+
+		orgamizationQuery := `
+			CREATE TABLE organizations (
+				id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+				founder UUID,
+				members	UUID[],
+				api_id	UUID,
+				created_at TIMESTAMPTZ DEFAULT NOW(),
+				updated_at TIMESTAMPTZ DEFAULT NOW()
+			);`
+
+		templateQuery := `
+			CREATE TABLE template (
+				id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+				name 	TEXT,
+				subject TEXT,
+				body	TEXT,
+				author_id UUID,
+				organization_id UUID,
+				is_restricted BOOLEAN DEFAULT FALSE,
+				created_at TIMESTAMPTZ DEFAULT NOW(),
+				updated_at TIMESTAMPTZ DEFAULT NOW()
+			);`
+
+		logQuery := `
+			CREATE TABLE logs (
+				id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+				email_id UUID,
+				organization_id UUID,
+				status TEXT DEFAULT 'queued',
+				created_at TIMESTAMPTZ DEFAULT NOW(),
+				updated_at TIMESTAMPTZ DEFAULT NOW()
+		);`
+
+		if _, err := client.Exec(ctx, logQuery); err != nil {
+			log.Fatalf("Failed to create 'logs' table ==> %v", err)
+		}
+
+		if _, err := client.Exec(ctx, templateQuery); err != nil {
+			log.Fatalf("Failed to create 'template' table ==> %v", err)
+		}
+
+		if _, err := client.Exec(ctx, orgamizationQuery); err != nil {
+			log.Fatalf("Failed to create 'organizations' table ==> %v", err)
+		}
+
+		if _, err := client.Exec(ctx, emailQuery); err != nil {
+			log.Fatalf("Failed to create 'emails' table ==> %v", err)
+		}
+
+		if _, err := client.Exec(ctx, apiQuery); err != nil {
+			log.Fatalf("Failed to create 'api_key' table ==> %v", err)
+		}
+
+		if _ , err := client.Exec(ctx, userQuery); err != nil {
+			log.Fatalf("Failed to create 'users' table ==> %v", err)
 		}
 	}
 }

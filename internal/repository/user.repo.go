@@ -63,7 +63,7 @@ func FindUserById(id uuid.UUID) (*models.User, error) {
 	var user models.User
 
 	psql := `
-		SELECT id, fullname, email, avatar, free_token, is_new, is_pro, is_organization, created_at, updated_at
+		SELECT id, fullname, email, avatar, is_new, is_pro, is_organization, created_at, updated_at
 		FROM users
 		WHERE id = $1;
 	`
@@ -73,7 +73,6 @@ func FindUserById(id uuid.UUID) (*models.User, error) {
 		&user.Fullname,
 		&user.Email,
 		&user.Avatar,
-		&user.FreeToken,
 		&user.IsNew,
 		&user.IsPro,
 		&user.IsOrganization,

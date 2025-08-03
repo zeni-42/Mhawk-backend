@@ -178,7 +178,7 @@ func UpdateAvatar(context *gin.Context) {
 		return
 	}
 
-	context.IndentedJSON(http.StatusOK, response.Success(nil, http.StatusOK, "Avatar added"))
+	context.IndentedJSON(http.StatusOK, response.Success(avatarUrl, http.StatusOK, "Avatar added"))
 }
 
 func GetUser(context *gin.Context) {
