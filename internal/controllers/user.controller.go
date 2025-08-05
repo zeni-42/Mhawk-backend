@@ -189,7 +189,7 @@ func GetUser(context *gin.Context) {
 		log.Printf("%v", err)
 	}
 
-	if data != nil {
+	if data != (models.User{}) {
 		context.IndentedJSON(http.StatusOK, response.Success(data, http.StatusOK, "User data C"))
 		return
 	}

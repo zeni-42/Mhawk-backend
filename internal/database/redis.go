@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/zeni-42/Mhawk/internal/models"
 )
 
 var RDB *redis.Client
@@ -68,23 +69,23 @@ func SetUserDataInRedis(k, v string) error {
 	return nil
 }
 
-func GetUserDataFromRedis(k string) (map[string]interface{}, error) {
+func GetUserDataFromRedis(k string) (models.User, error) {
 	if RDB == nil {
 		log.Println("Redis client is empty")
-		return nil, fmt.Errorf("client is empty")
+		return models.User{}, fmt.Errorf("client is empty")
 	}
 
 	ctx := context.Background()
 	data, err := RDB.Get(ctx, k).Result()
 	if err != nil {
-		return nil, err
+		return models.User{}, err
 	}
 
-	var jsonData map[string]interface{}
+	var jsonData models.User
 
 	if err := json.Unmarshal([]byte(data), &jsonData); err != nil {
 		log.Println("Unmarshaling failed")
-		return nil, err
+		return models.User{}, err
 	}
 
 	return jsonData, nil

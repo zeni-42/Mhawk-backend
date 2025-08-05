@@ -50,6 +50,7 @@ func InitTables(client *pgxpool.Pool) {
 		apiQuery := `
 			CREATE TABLE apikeys (
 				id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+				key_name TEXT UNIQUE NOT NULL, 
 				api_key TEXT UNIQUE NOT NULL,
 				free_token INTEGER DEFAULT 50,
 				used_token INTEGER DEFAULT 0,

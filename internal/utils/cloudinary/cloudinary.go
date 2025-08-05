@@ -49,6 +49,8 @@ func UploadOnCloudinary(file *multipart.FileHeader) (string, error) {
 	ctx := context.Background()
 	res, err := cld.Upload.Upload(ctx, localFilePath, uploader.UploadParams{
 		PublicID: "user_avatar_" + safeFileName,
+		ResourceType: "image",
+		Folder: "Mhawk_images",
 	})
 	if err != nil {
 		return "", err

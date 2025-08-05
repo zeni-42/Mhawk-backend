@@ -13,4 +13,12 @@ func Router(router *gin.Engine) {
 	// User Routes
 	userGroup := api.Group("/users")
 	UserRoutes(userGroup)
+
+	// Email Routes
+	emailGroup := api.Group("/email")
+	EmailRoutes(emailGroup)
+
+	// ApiKry Routes
+	apiKeyGroup := api.Group("/apikey")
+	ApiKeyRouter(apiKeyGroup)
 }
