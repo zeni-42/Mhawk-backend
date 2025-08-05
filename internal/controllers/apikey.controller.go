@@ -79,9 +79,9 @@ func GenerateNewApiKey(context *gin.Context) {
 
 	const keyPrefix = "mhawk+"
 
-	apiKey := userData.KeyName + keyPrefix+ key
+	apiKey := userData.KeyName + keyPrefix + key
 
-	existingApiKey, err :=  repository.FindApiKey(apiKey)
+	existingApiKey, err := repository.FindApiKey(apiKey)
 	if err != nil && errors.Is(err, pgx.ErrNoRows) {
 		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Error checking for existing API key"))
 		return

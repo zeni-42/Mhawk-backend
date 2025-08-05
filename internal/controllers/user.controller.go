@@ -220,3 +220,24 @@ func GetUser(context *gin.Context) {
 
 	context.IndentedJSON(http.StatusOK, response.Success(user, http.StatusOK, "User data"))
 }
+
+func MakePro(context *gin.Context) {
+	var user models.User
+
+	if err := context.BindJSON(&user); err != nil {
+		context.IndentedJSON(http.StatusBadRequest, response.Error(err, http.StatusBadRequest, "Invalid data"))
+		return
+	}
+
+	if _, err := repository.FindUserById(user.Id); err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		context.IndentedJSON(http.StatusNotFound, response.Error(err, http.StatusNotFound, "User not found"))
+		return
+	}
+
+	if err := repository.UpgradeUser(user.Id); err != nil {
+		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Failed to Upgrade user"))
+		return
+	}
+
+	context.IndentedJSON(http.StatusOK, response.Success(nil, http.StatusOK, "Enjoy your premium"))
+}

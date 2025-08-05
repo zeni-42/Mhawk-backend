@@ -128,10 +128,28 @@ func UpdateUserApiId(userId, apiId uuid.UUID) error {
 
 	psql := `
 		UPDATE users
-		SET api_id = $1,
+		SET api_id = $1
 		WHERE id = $2;
 	`
 	_, err := database.DB.Exec(ctx, psql, apiId, userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UpgradeUser(userId uuid.UUID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	psql := `
+		UPDATE users
+		SET is_pro = true
+		WHERE id = $1;
+	`
+
+	_, err := database.DB.Exec(ctx, psql, userId)
 	if err != nil {
 		return err
 	}
