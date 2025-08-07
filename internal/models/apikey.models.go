@@ -5,14 +5,17 @@ import (
 
 	"github.com/google/uuid"
 )
-
 type ApiKey struct {
 	Id          uuid.UUID 	`json:"id"`
-	UserID      uuid.UUID 	`json:"userId"`
-	KeyName		string		`json:"keyName"`	
-	ApiKey      string 		`json:"apiKey"`
-	UsedToken   int32     	`json:"usedToken"`
-	ExpireDate  time.Time 	`json:"expireDate"`
-	RefreshDate time.Time 	`json:"refreshDate"`
-	CreatedAt   time.Time 	`json:"createdAt"`
+	UserId		uuid.UUID	`json:"userid"`
+	KeyName		string		`json:"keyname"`	
+	ApiKey      string 		`json:"apikey"`
+	Description	string		`json:"description"`
+	IsActive	bool		`json:"isactive"`
+	Environment	string		`json:"environment"`
+	UsedToken   int32     	`json:"usedtoken"`
+	ExpireDate  time.Time 	`json:"expiredate"`
+	RefreshDate time.Time 	`json:"refreshdate"`
+	CreatedAt   time.Time 	`json:"createdat"`
+	UpdatedAt	time.Time	`json:"updatedat"`
 }

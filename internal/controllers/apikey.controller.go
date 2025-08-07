@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/zeni-42/Mhawk/internal/database"
 	"github.com/zeni-42/Mhawk/internal/models"
@@ -17,20 +16,7 @@ import (
 	"github.com/zeni-42/Mhawk/internal/utils/response"
 )
 
-type userData struct {
-	UserId		uuid.UUID 		`json:"id"`
-	KeyName		string			`json:"keyName"`
-}
-
-func findUserFromDB(id uuid.UUID) (*models.User, error) {
-	user, err := repository.FindUserById(id)
-	if err != nil {
-		return nil, err
-	}
-
-	return user, err
-}
-
+// Generate an cryptograthically secure API key 
 func KeyGenerator() string {
 	bytes := make([]byte, 32)
 	if _, err := rand.Read(bytes); err != nil {
@@ -41,34 +27,35 @@ func KeyGenerator() string {
 
 func GenerateNewApiKey(context *gin.Context) {
 	var api models.ApiKey
-	var userData userData
 	var err error
 
-	if strings.TrimSpace(userData.KeyName) == "" {
-		context.IndentedJSON(http.StatusBadRequest, response.Error(err, http.StatusBadRequest, "Key name cannot be empty"))
-		return
-	}
-
-	if err := context.BindJSON(&userData); err != nil {
+	// Bind and validate incoming JSON data
+	if err := context.BindJSON(&api); err != nil {
 		context.IndentedJSON(http.StatusBadRequest, response.Error(err, http.StatusBadRequest, "Invalid data"))
 		return
 	}
 
+	// // Checking for empty fields
+	if strings.TrimSpace(api.KeyName) == "" || strings.TrimSpace(api.Description) == "" {
+		context.IndentedJSON(http.StatusBadRequest, response.Error(err, http.StatusBadRequest, "Missing fields"))
+		return
+	}
+
 	// Checking cache for the user data
-	_, err = database.GetUserDataFromRedis(userData.UserId.String());
+	_, err = database.GetUserDataFromRedis(api.UserId.String());
 	if err != nil {
-		log.Printf("%v", err)
+		log.Println("User not found in cache")
 
 		// If not found get user from DB
-		_, DBerr := findUserFromDB(userData.UserId)
+		_, DBerr :=  repository.FindUserById(api.UserId)
 		if DBerr != nil {
 			if errors.Is(DBerr, pgx.ErrNoRows) {
 				context.IndentedJSON(http.StatusNotFound, response.Error(DBerr, http.StatusNotFound, "User not found"))
 				return
 			}
+			context.IndentedJSON(http.StatusInternalServerError, response.Error(DBerr, http.StatusInternalServerError, "Database error"))
+			return
 		}
-		context.IndentedJSON(http.StatusInternalServerError, response.Error(DBerr, http.StatusInternalServerError, "Database error"))
-		return
 	}
 
 	key := KeyGenerator()
@@ -79,10 +66,10 @@ func GenerateNewApiKey(context *gin.Context) {
 
 	const keyPrefix = "mhawk+"
 
-	apiKey := userData.KeyName + keyPrefix + key
+	apiKey := keyPrefix + key
 
 	existingApiKey, err := repository.FindApiKey(apiKey)
-	if err != nil && errors.Is(err, pgx.ErrNoRows) {
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Error checking for existing API key"))
 		return
 	}
@@ -92,11 +79,9 @@ func GenerateNewApiKey(context *gin.Context) {
 		return
 	}
 
-	api.KeyName = userData.KeyName
 	api.ApiKey = apiKey
 
-	apiID := repository.SaveAPIKey(api)
-	if err := repository.UpdateUserApiId(userData.UserId, apiID); err != nil {
+	if _, err := repository.SaveAPIKey(api); err != nil {
 		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Failed to save API ID"))
 		return
 	}

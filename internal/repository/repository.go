@@ -41,7 +41,6 @@ func InitTables(client *pgxpool.Pool) {
 			avatar TEXT DEFAULT 'https://res.cloudinary.com/dfbtssuwy/image/upload/v1735838884/ljziqvhelksqmytkffj9.jpg',
 			is_pro BOOLEAN DEFAULT FALSE,
 			is_organization BOOLEAN DEFAULT FALSE,
-			api_id UUID UNIQUE REFERENCES apikeys(id) ON DELETE SET NULL,
 			organization_id UUID,
 			created_at TIMESTAMPTZ DEFAULT NOW(),
 			updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -50,8 +49,12 @@ func InitTables(client *pgxpool.Pool) {
 		apiQuery := `
 			CREATE TABLE apikeys (
 				id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+				user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
 				key_name TEXT UNIQUE NOT NULL, 
 				api_key TEXT UNIQUE NOT NULL,
+				description TEXT NOT NULL,
+				is_active BOOLEAN DEFAULT TRUE,
+				env TEXT NOT NULL DEFAULT 'dev', 
 				free_token INTEGER DEFAULT 50,
 				used_token INTEGER DEFAULT 0,
 				expired_date TIMESTAMPTZ,
@@ -123,12 +126,12 @@ func InitTables(client *pgxpool.Pool) {
 			log.Fatalf("Failed to create 'emails' table ==> %v", err)
 		}
 
-		if _, err := client.Exec(ctx, apiQuery); err != nil {
-			log.Fatalf("Failed to create 'api_key' table ==> %v", err)
-		}
-
 		if _ , err := client.Exec(ctx, userQuery); err != nil {
 			log.Fatalf("Failed to create 'users' table ==> %v", err)
+		}
+
+		if _, err := client.Exec(ctx, apiQuery); err != nil {
+			log.Fatalf("Failed to create 'api_key' table ==> %v", err)
 		}
 	}
 }

@@ -32,30 +32,28 @@ func FindApiKey(apikey string) (*models.ApiKey, error) {
 	return &apiKey, nil
 }
 
-func SaveAPIKey(apikey models.ApiKey) uuid.UUID {
+func SaveAPIKey(apikey models.ApiKey) (uuid.UUID, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second) 
 	defer cancel()
 
 	psql := `
-		INSET INTO apikeys (
-			key_name, api_key
+		INSERT INTO apikeys (
+			user_id, key_name, api_key, description, env
 		) VALUES (
-			$1, $2
+			$1, $2, $3, $4, $5
 		);
 	`
 
-	var InsertedId uuid.UUID
-
-	if err := database.DB.QueryRow(ctx, psql, apikey.KeyName, apikey.ApiKey).Scan(&InsertedId); err != nil {
-		return uuid.Nil
+	if _, err := database.DB.Exec(ctx, psql, apikey.UserId, apikey.KeyName, apikey.ApiKey, apikey.Description, apikey.Environment); err != nil {
+		return uuid.Nil, err
 	}
 
 	insertedApiKey, err := FindApiKey(apikey.ApiKey)
 	if err != nil {
-		return uuid.Nil
+		return uuid.Nil, err
 	}
 
 	deRefApiId := *insertedApiKey
 
-	return deRefApiId.Id
+	return deRefApiId.Id, nil
 }

@@ -17,7 +17,6 @@ type User struct {
 	Avatar			string		`json:"avatar"`
 	IsPro           bool      	`json:"ispro"`
 	IsOrganization  bool      	`json:"isorganization"`
-	ApiId           uuid.UUID 	`json:"apiid"`
 	OrganizationId  uuid.UUID 	`json:"organizationid"`
 	CreatedAt       time.Time 	`json:"createdat"`
 	UpdatedAt       time.Time 	`json:"updatedat"`
