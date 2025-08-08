@@ -108,3 +108,66 @@ func FindAllApisFromUserId (id uuid.UUID) ([]models.ApiKey, error) {
 
 	return apiKeys, nil
 }
+
+func FindByIdAndDeleteAPI(id uuid.UUID) (int64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	psql := `
+		DELETE 
+		FROM apikeys
+		WHERE id = $1;
+	`
+
+	res, err := database.DB.Exec(ctx, psql, id)
+	if err != nil {
+		return 0, err
+	}
+
+	return res.RowsAffected(), nil
+}
+
+func FindByIdAndToggleActive(id uuid.UUID) (int64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	psql := `
+		SELECT id, is_active
+		FROM apikeys
+		WHERE id = $1
+	`
+
+	var apikey models.ApiKey
+
+	if err := database.DB.QueryRow(ctx, psql, id).Scan(&apikey.Id, &apikey.IsActive); err != nil {
+		return 0, err
+	}
+
+	if apikey.IsActive {
+		query := `
+			UPDATE apikeys
+			SET is_active = false
+			WHERE id = $1
+		`
+
+		res, err := database.DB.Exec(ctx, query, id)
+		if err != nil {
+			return 0, err
+		}
+
+		return res.RowsAffected(), nil
+	} else {
+		query := `
+			UPDATE apikeys
+			SET is_active = true
+			WHERE id = $1
+		`
+
+		res, err := database.DB.Exec(ctx, query, id)
+		if err != nil {
+			return 0, err
+		}
+
+		return res.RowsAffected(), nil
+	}
+}

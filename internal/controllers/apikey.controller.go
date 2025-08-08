@@ -65,7 +65,7 @@ func GenerateNewApiKey(context *gin.Context) {
 		return
 	}
 
-	const keyPrefix = "mhawk+"
+	const keyPrefix = "follow_@zeni-42_on_github_"
 
 	apiKey := keyPrefix + key
 
@@ -92,6 +92,10 @@ func GenerateNewApiKey(context *gin.Context) {
 
 func GetUserApiKeys(context *gin.Context) {
 	idParams := context.Param("id")
+	if idParams == "" {
+		context.IndentedJSON(http.StatusBadRequest, response.Error(nil, http.StatusBadRequest, "Missing values"))
+		return
+	}
 
 	parsedUUID := uuid.MustParse(idParams)
 
@@ -108,4 +112,58 @@ func GetUserApiKeys(context *gin.Context) {
 	}
 
 	context.IndentedJSON(http.StatusOK, response.Success(apiKeys, http.StatusOK, "All API keys"))
+}
+
+func DeleteAPI(context *gin.Context) {
+	apiId := context.Param("id")
+	if apiId == "" {
+		context.IndentedJSON(http.StatusBadRequest, response.Error(nil, http.StatusBadRequest, "Missing values"))
+		return
+	}
+
+	parsedId := uuid.MustParse(apiId)
+
+	rowsAffected, err := repository.FindByIdAndDeleteAPI(parsedId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			context.IndentedJSON(http.StatusNotFound, response.Error(err, http.StatusNotFound, "API not found"))
+			return
+		}
+		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Database error"))
+		return
+	}
+
+	if rowsAffected == 0 {
+		context.IndentedJSON(http.StatusNotFound, response.Error(nil, http.StatusNotFound, "API ID does not exist"))
+		return
+	}
+
+	context.IndentedJSON(http.StatusOK, response.Success(rowsAffected, http.StatusOK, "API removed"))
+}
+
+func ToggleActive(context *gin.Context) {
+	apiId := context.Param("id")
+	if apiId == "" {
+		context.IndentedJSON(http.StatusBadRequest, response.Error(nil, http.StatusBadRequest, "Missing values"))
+		return
+	}
+
+	parsedAPIid := uuid.MustParse(apiId)
+
+	rowsAffected, err := repository.FindByIdAndToggleActive(parsedAPIid)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			context.IndentedJSON(http.StatusNotFound, response.Error(err, http.StatusNotFound, "API not found"))
+			return
+		}
+		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Database error"))
+		return
+	}
+
+	if rowsAffected == 0 {
+		context.IndentedJSON(http.StatusNotFound, response.Error(nil, http.StatusNotFound, "API ID does not exist"))
+		return
+	}
+
+	context.IndentedJSON(http.StatusOK, response.Success(rowsAffected, http.StatusOK, "API updated"))
 }
