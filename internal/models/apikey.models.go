@@ -13,6 +13,7 @@ type ApiKey struct {
 	Description	string		`json:"description"`
 	IsActive	bool		`json:"isactive"`
 	Environment	string		`json:"environment"`
+	Token		int32		`json:"token"`
 	UsedToken   int32     	`json:"usedtoken"`
 	ExpireDate  time.Time 	`json:"expiredate"`
 	RefreshDate time.Time 	`json:"refreshdate"`

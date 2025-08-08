@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/zeni-42/Mhawk/internal/database"
 	"github.com/zeni-42/Mhawk/internal/models"
@@ -16,7 +17,7 @@ import (
 	"github.com/zeni-42/Mhawk/internal/utils/response"
 )
 
-// Generate an cryptograthically secure API key 
+// Generate an cryptograthically secure API key
 func KeyGenerator() string {
 	bytes := make([]byte, 32)
 	if _, err := rand.Read(bytes); err != nil {
@@ -87,4 +88,24 @@ func GenerateNewApiKey(context *gin.Context) {
 	}
 
 	context.IndentedJSON(http.StatusOK, response.Success(apiKey, http.StatusOK, "API key"))
+}
+
+func GetUserApiKeys(context *gin.Context) {
+	idParams := context.Param("id")
+
+	parsedUUID := uuid.MustParse(idParams)
+
+	_, err := repository.FindUserById(parsedUUID);
+	if err != nil && errors.Is(err, pgx.ErrNoRows) {
+		context.IndentedJSON(http.StatusNotFound, response.Error(err, http.StatusNotFound, "User not found"))
+		return
+	}
+
+	apiKeys, err := repository.FindAllApisFromUserId(parsedUUID)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		context.IndentedJSON(http.StatusNotFound, response.Error(err, http.StatusNotFound, "No API key found"))
+		return
+	}
+
+	context.IndentedJSON(http.StatusOK, response.Success(apiKeys, http.StatusOK, "All API keys"))
 }

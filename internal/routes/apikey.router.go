@@ -6,5 +6,6 @@ import (
 )
 
 func ApiKeyRouter(r *gin.RouterGroup) {
-	r.POST("/create", controllers.GenerateNewApiKey)
+	r.POST("/", controllers.GenerateNewApiKey)
+	r.GET("/:id", controllers.GetUserApiKeys)
 }
