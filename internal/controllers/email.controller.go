@@ -75,8 +75,8 @@ func SendEmail(context *gin.Context) {
 		"to": userForm.To,
 		"subject": userForm.Subject,
 		"body": userForm.Body,
-		"isHtml": false,
-		"html": "",
+		"isHtml": userForm.IsHTml,
+		"html": userForm.Html,
 	}
 
 	body, err := json.Marshal(bodyMap)
