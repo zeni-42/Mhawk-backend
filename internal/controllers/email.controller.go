@@ -20,7 +20,7 @@ type EmailForm struct {
 	UserId		uuid.UUID	`json:"userid"`
 	ApiKeyId	uuid.UUID	`json:"apikeyid"`	
 	To 			string		`json:"to"`
-	Sub			string		`json:"sub"`
+	Subject		string		`json:"subject"`
 	Body		string		`json:"body"`
 	IsHTml		bool		`json:"isHtml"`
 	Html		string		`json:"html"`
@@ -40,7 +40,7 @@ func SendEmail(context *gin.Context) {
 			context.IndentedJSON(http.StatusNotFound, response.Error(err, http.StatusNotFound, "User not found"))
 			return 
 		}
-		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "USER Database error"))
+		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "USER table error"))
 		return 
 	}
 
@@ -50,7 +50,7 @@ func SendEmail(context *gin.Context) {
 			context.IndentedJSON(http.StatusNotFound, response.Error(err, http.StatusNotFound, "API key not found"))
 			return 
 		}
-		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "API Database error"))
+		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "API table error"))
 		return 
 	}
 
@@ -60,15 +60,20 @@ func SendEmail(context *gin.Context) {
 		return
 	}
 
-	rowAffected, err := repository.FindAPIKeyandUpdateToken(apikey)
-	if err != nil || rowAffected == 0 {
+	rowAffected, err := repository.UpdateAPIToken(apikey)
+	if err != nil {
 		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Failed to updated token"))
+		return
+	}
+
+	if rowAffected == 0 {
+		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Row affected is 0"))
 		return
 	}
 
 	bodyMap := map[string]interface{}{
 		"to": userForm.To,
-		"subject": userForm.Sub,
+		"subject": userForm.Subject,
 		"body": userForm.Body,
 		"isHtml": false,
 		"html": "",

@@ -188,6 +188,7 @@ func FindAPIUsingId(id uuid.UUID) (models.ApiKey, error) {
 		&api.Id,
 		&api.UserId,
 		&api.KeyName,
+		&api.ApiKey,
 		&api.IsActive,
 		&api.Token,
 		&api.UsedToken,
@@ -198,7 +199,7 @@ func FindAPIUsingId(id uuid.UUID) (models.ApiKey, error) {
 	return api, nil
 }
 
-func FindAPIKeyandUpdateToken(api models.ApiKey) (int64, error) {
+func UpdateAPIToken(api models.ApiKey) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
@@ -207,14 +208,14 @@ func FindAPIKeyandUpdateToken(api models.ApiKey) (int64, error) {
 
 	psql := `
 		UPDATE apikeys
-		SET token = $1, user_token = $2
+		SET token = $1, used_token = $2
 		WHERE id = $3
 	`
 
-	res, err := database.DB.Exec(ctx, psql, api.Token, api.UsedToken, api.Id)
+	tag, err := database.DB.Exec(ctx, psql, api.Token, api.UsedToken, api.Id)
 	if err != nil {
 		return 0, err
 	}
 
-	return res.RowsAffected(), nil
+	return tag.RowsAffected(), nil
 }
