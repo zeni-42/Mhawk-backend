@@ -66,8 +66,8 @@ func InitTables(client *pgxpool.Pool) {
 		emailQuery := `
 			CREATE TABLE emails (
 				id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-				user_id UUID,
-				organization_id UUID,
+				user_id UUID REFERENCE users(id) ON DELETE CASCADE,
+				organization_id UUID REFERENCE users(id) ON DELETE CASCADE,
 				is_template BOOLEAN DEFAULT FALSE,
 				template_id UUID,
 				is_bulk BOOLEAN DEFAULT FALSE,

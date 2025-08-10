@@ -171,3 +171,50 @@ func FindByIdAndToggleActive(id uuid.UUID) (int64, error) {
 		return res.RowsAffected(), nil
 	}
 }
+
+func FindAPIUsingId(id uuid.UUID) (models.ApiKey, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	var api models.ApiKey
+
+	psql := `
+		SELECT id, user_id, key_name, api_key, is_active, token, used_token
+		FROM apikeys
+		WHERE id = $1;
+	`
+
+	if err := database.DB.QueryRow(ctx, psql, id).Scan(
+		&api.Id,
+		&api.UserId,
+		&api.KeyName,
+		&api.IsActive,
+		&api.Token,
+		&api.UsedToken,
+	); err != nil {
+		return models.ApiKey{}, err
+	}
+
+	return api, nil
+}
+
+func FindAPIKeyandUpdateToken(api models.ApiKey) (int64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	api.Token -= 1
+	api.UsedToken += 1
+
+	psql := `
+		UPDATE apikeys
+		SET token = $1, user_token = $2
+		WHERE id = $3
+	`
+
+	res, err := database.DB.Exec(ctx, psql, api.Token, api.UsedToken, api.Id)
+	if err != nil {
+		return 0, err
+	}
+
+	return res.RowsAffected(), nil
+}

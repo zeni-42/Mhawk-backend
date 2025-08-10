@@ -8,13 +8,13 @@ import (
 
 type Email struct {
 	Id             uuid.UUID `json:"id"`
-	UserId         uuid.UUID `json:"userId"`
-	OrganizationId uuid.UUID `json:"organizationId"`
-	TemplateId     uuid.UUID `json:"templateId"`
-	ApiId          uuid.UUID `json:"apiId"`
-	LogId          uuid.UUID `json:"logId"`
+	UserId         uuid.UUID `json:"userid"`
+	OrganizationId uuid.UUID `json:"organizationid"`
+	TemplateId     uuid.UUID `json:"templateid"`
+	ApiId          uuid.UUID `json:"apiid"`
+	LogId          uuid.UUID `json:"logid"`
 	Recievers      []string  `json:"recievers"`
-	IsBulk         bool      `json:"isBulk"`
-	CreatedAt      time.Time `json:"createdAt"`
-	UpdatedAt      time.Time `json:"updatedAt"`
+	IsBulk         bool      `json:"isbulk"`
+	CreatedAt      time.Time `json:"createdat"`
+	UpdatedAt      time.Time `json:"updatedat"`
 }
