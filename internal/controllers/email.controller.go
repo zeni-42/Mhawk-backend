@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -12,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/zeni-42/Mhawk/internal/models"
 	"github.com/zeni-42/Mhawk/internal/repository"
 	"github.com/zeni-42/Mhawk/internal/utils/response"
 )
@@ -71,6 +71,26 @@ func SendEmail(context *gin.Context) {
 		return
 	}
 
+	var email models.Email
+	email.UserId = userForm.UserId
+	email.ApiId = userForm.ApiKeyId
+	email.To = userForm.To
+	email.Subject = userForm.Subject
+	email.Body = userForm.Body
+	email.Html = userForm.Html
+	email.IsHtml = userForm.IsHTml
+
+	id, err := repository.SaveEmail(email)
+	if err != nil {
+		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Database queuing failed"))
+		return
+	}
+
+	if id == uuid.Nil {
+		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Id is nil"))
+		return
+	}
+
 	bodyMap := map[string]interface{}{
 		"to": userForm.To,
 		"subject": userForm.Subject,
@@ -102,7 +122,5 @@ func SendEmail(context *gin.Context) {
 	}
 
 	defer res.Body.Close()
-
-	resBody, _ := io.ReadAll(r.Body)
-	context.IndentedJSON(http.StatusOK, response.Success(resBody, http.StatusOK, "Email sent successfully"))
+	context.IndentedJSON(http.StatusOK, response.Success(id, http.StatusOK, "Email sent successfully"))
 }

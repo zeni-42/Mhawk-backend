@@ -66,23 +66,17 @@ func InitTables(client *pgxpool.Pool) {
 		emailQuery := `
 			CREATE TABLE emails (
 				id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-				user_id UUID REFERENCE users(id) ON DELETE CASCADE,
-				organization_id UUID REFERENCE users(id) ON DELETE CASCADE,
+				user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+				api_id	UUID REFERENCES apikeys(id) ON DELETE CASCADE,
+				"to" TEXT NOT NULL,
+				subject TEXT NOT NULL,
+				body TEXT NOT NULL,
+				html TEXT NOT NULL,
+				is_html BOOLEAN DEFAULT FALSE,
+				status TEXT DEFAULT 'Pending',
 				is_template BOOLEAN DEFAULT FALSE,
 				template_id UUID,
 				is_bulk BOOLEAN DEFAULT FALSE,
-				log_id UUID,
-				recievers TEXT[] DEFAULT NULL,
-				created_at TIMESTAMPTZ DEFAULT NOW(),
-				updated_at TIMESTAMPTZ DEFAULT NOW()
-			);`
-
-		orgamizationQuery := `
-			CREATE TABLE organizations (
-				id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-				founder UUID,
-				members	UUID[],
-				api_id	UUID,
 				created_at TIMESTAMPTZ DEFAULT NOW(),
 				updated_at TIMESTAMPTZ DEFAULT NOW()
 			);`
@@ -103,35 +97,29 @@ func InitTables(client *pgxpool.Pool) {
 		logQuery := `
 			CREATE TABLE logs (
 				id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-				email_id UUID,
-				organization_id UUID,
+				email_id UUID REFERENCES emails(id) ON DELETE CASCADE,
 				status TEXT DEFAULT 'queued',
 				created_at TIMESTAMPTZ DEFAULT NOW(),
 				updated_at TIMESTAMPTZ DEFAULT NOW()
 		);`
 
-		if _, err := client.Exec(ctx, logQuery); err != nil {
-			log.Fatalf("Failed to create 'logs' table ==> %v", err)
-		}
-
-		if _, err := client.Exec(ctx, templateQuery); err != nil {
-			log.Fatalf("Failed to create 'template' table ==> %v", err)
-		}
-
-		if _, err := client.Exec(ctx, orgamizationQuery); err != nil {
-			log.Fatalf("Failed to create 'organizations' table ==> %v", err)
-		}
-
-		if _, err := client.Exec(ctx, emailQuery); err != nil {
-			log.Fatalf("Failed to create 'emails' table ==> %v", err)
-		}
-
 		if _ , err := client.Exec(ctx, userQuery); err != nil {
 			log.Fatalf("Failed to create 'users' table ==> %v", err)
 		}
-
+		
 		if _, err := client.Exec(ctx, apiQuery); err != nil {
 			log.Fatalf("Failed to create 'api_key' table ==> %v", err)
+		}
+		
+		if _, err := client.Exec(ctx, emailQuery); err != nil {
+			log.Fatalf("Failed to create 'emails' table ==> %v", err)
+		}
+		if _, err := client.Exec(ctx, logQuery); err != nil {
+			log.Fatalf("Failed to create 'logs' table ==> %v", err)
+		}
+		
+		if _, err := client.Exec(ctx, templateQuery); err != nil {
+			log.Fatalf("Failed to create 'template' table ==> %v", err)
 		}
 	}
 }
