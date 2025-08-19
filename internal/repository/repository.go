@@ -30,8 +30,8 @@ func InitTables(client *pgxpool.Pool) {
 	}
 
 	if !exist {
-		userQuery := 
-		`CREATE TABLE users (
+		userQuery :=
+			`CREATE TABLE users (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			fullname TEXT NOT NULL,
 			email TEXT UNIQUE NOT NULL,
@@ -81,6 +81,31 @@ func InitTables(client *pgxpool.Pool) {
 				updated_at TIMESTAMPTZ DEFAULT NOW()
 			);`
 
+		organizationQuery := `
+			CREATE TABLE organization (
+				id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+				founder UUID REFERENCES users(id) ON DELETE CASCADE,
+				name TEXT NOT NULL,
+				description TEXT NOT NULL,
+				domain TEXT NOT NULL,
+				created_at TIMESTAMPTZ DEFAULT NOW(),
+				updated_at TIMESTAMPTZ DEFAULT NOW()
+			);`
+
+		organizationMembersQuery := `
+			CREATE TABLE organization_members (
+				organization_id UUID REFERENCES organization(id) ON DELETE CASCADE,
+				user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+				PRIMARY KEY (organization_id, user_id)
+			);`
+
+		organizationApiKeyQuery := `
+			CREATE TABLE organization_api_keys (
+				organization_id UUID REFERENCES organization(id) ON DELETE CASCADE,
+				api_id UUID REFERENCES apikeys(id) ON DELETE CASCADE,
+				PRIMARY KEY (organization_id, api_id)
+			);`
+
 		templateQuery := `
 			CREATE TABLE template (
 				id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -101,25 +126,56 @@ func InitTables(client *pgxpool.Pool) {
 				status TEXT DEFAULT 'queued',
 				created_at TIMESTAMPTZ DEFAULT NOW(),
 				updated_at TIMESTAMPTZ DEFAULT NOW()
-		);`
+			);`
 
-		if _ , err := client.Exec(ctx, userQuery); err != nil {
+		notificationsQuery := `
+			CREATE TABLE notifications (
+				id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+				sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
+				reciever_id UUID REFERENCES users(id) ON DELETE CASCADE,
+				is_system BOOLEAN DEFAULT FALSE,
+				title TEXT NOT NULL,
+				message TEXT NOT NULL,
+				data JSONB NOT NULL,
+				is_read BOOLEAN DEFAULT FALSE,
+				read_at TIMESTAMPTZ,
+				created_at TIMESTAMPTZ DEFAULT NOW()
+			);`
+
+		if _, err := client.Exec(ctx, userQuery); err != nil {
 			log.Fatalf("Failed to create 'users' table ==> %v", err)
 		}
-		
+
 		if _, err := client.Exec(ctx, apiQuery); err != nil {
 			log.Fatalf("Failed to create 'api_key' table ==> %v", err)
 		}
-		
+
+		if _, err := client.Exec(ctx, organizationQuery); err != nil {
+			log.Fatalf("Failed to create 'organization' table ==> %v", err)
+		}
+
+		if _, err := client.Exec(ctx, organizationMembersQuery); err != nil {
+			log.Fatalf("Failed to create 'organization_members' table ==> %v", err)
+		}
+
+		if _, err := client.Exec(ctx, organizationApiKeyQuery); err != nil {
+			log.Fatalf("Failed to create 'organization_api_keys' table ==> %v", err)
+		}
+
 		if _, err := client.Exec(ctx, emailQuery); err != nil {
 			log.Fatalf("Failed to create 'emails' table ==> %v", err)
 		}
 		if _, err := client.Exec(ctx, logQuery); err != nil {
 			log.Fatalf("Failed to create 'logs' table ==> %v", err)
 		}
-		
+
 		if _, err := client.Exec(ctx, templateQuery); err != nil {
 			log.Fatalf("Failed to create 'template' table ==> %v", err)
 		}
+
+		if _, err := client.Exec(ctx, notificationsQuery); err != nil {
+			log.Fatalf("Failed to create 'notifications' table ==> %v", err)
+		}
+
 	}
 }
