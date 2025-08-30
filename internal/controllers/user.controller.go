@@ -241,3 +241,35 @@ func MakePro(context *gin.Context) {
 
 	context.IndentedJSON(http.StatusOK, response.Success(nil, http.StatusOK, "Enjoy your premium"))
 }
+
+func FindUserByEmailQuery(context *gin.Context) {
+	var newUser models.User
+
+	requestedEmail, res := context.GetQuery("e")
+	if !res {
+		context.IndentedJSON(http.StatusBadRequest, response.Error(nil, http.StatusBadRequest, "Invalid Data"))
+		return
+	}
+
+	if requestedEmail == "" {
+		context.IndentedJSON(http.StatusBadRequest, response.Error(nil, http.StatusBadRequest, "No data found"))
+		return
+	}
+
+	user, err := repository.FindUserByEmail(requestedEmail)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			context.IndentedJSON(http.StatusNotFound, response.Error(nil, http.StatusNotFound, "User not found"))
+			return
+		}
+		context.IndentedJSON(http.StatusInternalServerError, response.Error(err, http.StatusInternalServerError, "Database Error"))
+		return
+	}
+
+	newUser.Id = user.Id
+	newUser.Fullname = user.Fullname
+	newUser.Avatar = user.Avatar
+	newUser.Email = user.Email
+
+	context.IndentedJSON(http.StatusOK, response.Success(newUser, http.StatusOK, "User data"))
+}

@@ -12,4 +12,5 @@ func UserRoutes(r *gin.RouterGroup) {
 	r.POST("/logout", controllers.LogoutUser)
 	r.PUT("/update-avatar", controllers.UpdateAvatar)
 	r.POST("/upgrade", controllers.MakePro)
+	r.GET("/query", controllers.FindUserByEmailQuery)
 }
