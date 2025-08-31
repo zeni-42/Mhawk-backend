@@ -40,8 +40,6 @@ func InitTables(client *pgxpool.Pool) {
 			is_new BOOLEAN DEFAULT TRUE,
 			avatar TEXT DEFAULT 'https://res.cloudinary.com/dfbtssuwy/image/upload/v1735838884/ljziqvhelksqmytkffj9.jpg',
 			is_pro BOOLEAN DEFAULT FALSE,
-			is_organization BOOLEAN DEFAULT FALSE,
-			organization_id UUID,
 			created_at TIMESTAMPTZ DEFAULT NOW(),
 			updated_at TIMESTAMPTZ DEFAULT NOW()
 		);`
@@ -79,31 +77,6 @@ func InitTables(client *pgxpool.Pool) {
 				is_bulk BOOLEAN DEFAULT FALSE,
 				created_at TIMESTAMPTZ DEFAULT NOW(),
 				updated_at TIMESTAMPTZ DEFAULT NOW()
-			);`
-
-		organizationQuery := `
-			CREATE TABLE organization (
-				id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-				founder UUID REFERENCES users(id) ON DELETE CASCADE,
-				name TEXT NOT NULL,
-				description TEXT NOT NULL,
-				domain TEXT NOT NULL,
-				created_at TIMESTAMPTZ DEFAULT NOW(),
-				updated_at TIMESTAMPTZ DEFAULT NOW()
-			);`
-
-		organizationMembersQuery := `
-			CREATE TABLE organization_members (
-				organization_id UUID REFERENCES organization(id) ON DELETE CASCADE,
-				user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-				PRIMARY KEY (organization_id, user_id)
-			);`
-
-		organizationApiKeyQuery := `
-			CREATE TABLE organization_api_keys (
-				organization_id UUID REFERENCES organization(id) ON DELETE CASCADE,
-				api_id UUID REFERENCES apikeys(id) ON DELETE CASCADE,
-				PRIMARY KEY (organization_id, api_id)
 			);`
 
 		templateQuery := `
@@ -148,18 +121,6 @@ func InitTables(client *pgxpool.Pool) {
 
 		if _, err := client.Exec(ctx, apiQuery); err != nil {
 			log.Fatalf("Failed to create 'api_key' table ==> %v", err)
-		}
-
-		if _, err := client.Exec(ctx, organizationQuery); err != nil {
-			log.Fatalf("Failed to create 'organization' table ==> %v", err)
-		}
-
-		if _, err := client.Exec(ctx, organizationMembersQuery); err != nil {
-			log.Fatalf("Failed to create 'organization_members' table ==> %v", err)
-		}
-
-		if _, err := client.Exec(ctx, organizationApiKeyQuery); err != nil {
-			log.Fatalf("Failed to create 'organization_api_keys' table ==> %v", err)
 		}
 
 		if _, err := client.Exec(ctx, emailQuery); err != nil {

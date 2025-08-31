@@ -21,8 +21,4 @@ func Router(router *gin.Engine) {
 	// ApiKey Routes
 	apiKeyGroup := api.Group("/apikey")
 	ApiKeyRouter(apiKeyGroup)
-
-	// Organization Routes
-	organizationGroups := api.Group("/orgs")
-	OrganizationRoutes(organizationGroups)
 }
